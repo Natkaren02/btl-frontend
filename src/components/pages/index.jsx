@@ -175,12 +175,12 @@ export function HowItWorks() {
 // About.jsx
 export function About() {
   const team = [
-    ['ZL', 'Zoe Lafeuille', 'Strategy & Market Development'],
-    ['LB', 'Lova Bergman', 'Sustainability & Brand Verification'],
-    ['JI', 'Justin Inglisa', 'Business Model & Commercial Partnerships'],
-    ['PK', 'Panagiota Katsoulari', 'Consumer Research & Stakeholder Analysis'],
-    ['AV', 'Amelie von Allwörden', 'Operations & Supply Chain'],
-    ['NM', 'Natasha Karen Madsen', 'Product Design & User Experience'],
+    ['01', 'Strategy & Market Development', ''],
+    ['02', 'Sustainability & Brand Verification', ''],
+    ['03', 'Business Model & Commercial Partnerships', ''],
+    ['04', 'Consumer Research & Stakeholder Analysis', ''],
+    ['05', 'Operations & Supply Chain', ''],
+    ['06', 'Product Design & User Experience', ''],
   ];
 
   return (
@@ -218,12 +218,8 @@ export function About() {
       <section className="px-12 py-20" id="team">
         <p className="text-[10px] tracking-[0.18em] uppercase text-[#7A7060] mb-10">The team</p>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-px bg-[#2E2A20] border border-[#2E2A20]">
-          {team.map(([initials, name, role]) => (
-            <div key={name} className="bg-[#18160F] p-6">
-              <div className="w-10 h-10 border border-[#2E2A20] flex items-center justify-center font-['Cormorant_Garamond'] italic text-[#C9A96E] mb-4">
-                {initials}
-              </div>
-              <p className="text-[#F0EBE1] text-sm mb-1">{name}</p>
+          {team.map(([num, role]) => (
+            <div key={num} className="bg-[#18160F] p-6">
               <p className="text-[#7A7060] text-xs">{role}</p>
             </div>
           ))}
