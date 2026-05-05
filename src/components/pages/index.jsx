@@ -188,7 +188,7 @@ export function About() {
       <div className="px-12 py-16 border-b border-[#2E2A20]">
         <p className="text-[10px] tracking-[0.18em] uppercase text-[#7A7060] mb-3">Who we are</p>
         <h1 className="font-['Cormorant_Garamond'] italic text-[#F0EBE1] text-6xl font-light max-w-2xl leading-tight">
-          Built by people who couldn't find <span className="text-[#C9A96E]">the clothes they wanted.</span>
+          The most stylish thing <span className="text-[#C9A96E]">you can do is care.</span>
         </h1>
       </div>
 
