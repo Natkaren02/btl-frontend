@@ -51,8 +51,9 @@ export default function Footer() {
       </div>
       <div className="flex justify-between items-center pt-6 border-t border-[#2E2A20]">
         <p className="text-[#7A7060] text-xs tracking-wider">© 2026 BeyondTheLabel · Copenhagen</p>
-        <p className="text-[#7A7060] text-xs">Built by people who couldn't find the clothes they wanted.</p>
+        <p className="text-[#7A7060] text-xs">The most stylish thing you can do is care.</p>
       </div>
     </footer>
   );
 }
+
