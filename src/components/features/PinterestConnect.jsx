@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const API = import.meta.env.VITE_API_URL || '/api';
+const API = import.meta.env.VITE_API_URL || 'https://btl-backend-production-f682.up.railway.app/api';
 const SESSION_KEY = 'btl_pinterest_session';
 
 export default function PinterestConnect({ onSuccess }) {
