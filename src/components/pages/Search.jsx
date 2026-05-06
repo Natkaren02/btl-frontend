@@ -11,7 +11,7 @@ import WardrobeSimilarNudge from '../features/WardrobeSimilarNudge';
 export default function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { query, results, total, loading, error, filters, page, search, updateFilters, setPage } = useSearch();
-  const [showPinterest, setShowPinterest] = useState(true);
+  
 
   // Pick up ?q= from URL on load
   useEffect(() => {
@@ -38,7 +38,7 @@ export default function Search() {
       </div>
 
       {/* Pinterest connect prompt */}
-      {showPinterest && !query && (
+      {!query && (
         <div className="mx-12 my-6 p-5 border border-[#2E2A20] bg-[#211E16] flex items-center justify-between gap-6 flex-wrap">
           <div>
             <p className="font-['Cormorant_Garamond'] italic text-[#F0EBE1] text-lg mb-1">
@@ -51,12 +51,6 @@ export default function Search() {
           </div>
           <div className="flex gap-3 flex-shrink-0">
             <PinterestConnect onSuccess={(res) => console.log('Pinterest results:', res)} />
-            <button
-              onClick={() => setShowPinterest(false)}
-              className="text-[#7A7060] text-xs border border-[#2E2A20] px-4 py-2 hover:text-[#F0EBE1] transition-colors"
-            >
-              Dismiss
-            </button>
           </div>
         </div>
       )}
@@ -142,3 +136,4 @@ export default function Search() {
     </div>
   );
 }
+
