@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useSearch } from '../../hooks/useSearch';
+import { useSearchStore } from '../../store';
 import { wardrobe as wardrobeApi, wishlist as wishlistApi } from '../../lib/api';
 import ProductCard from '../features/ProductCard';
 import SearchBar from '../features/SearchBar';
@@ -38,22 +39,13 @@ export default function Search() {
       </div>
 
       {/* Pinterest connect prompt */}
-      {!query && (
-        <div className="mx-12 my-6 p-5 border border-[#2E2A20] bg-[#211E16] flex items-center justify-between gap-6 flex-wrap">
-          <div>
-            <p className="font-['Cormorant_Garamond'] italic text-[#F0EBE1] text-lg mb-1">
-              Connect your Pinterest board
-            </p>
-            <p className="text-[#7A7060] text-sm">
-              Visual matching — the app reads your pins as images, not descriptions.
-              Low-rise stays low-rise.
-            </p>
-          </div>
-          <div className="flex gap-3 flex-shrink-0">
-            <PinterestConnect onSuccess={(res) => console.log('Pinterest results:', res)} />
-          </div>
-        </div>
-      )}
+      <div className="mx-12 my-6 p-5 border border-[#2E2A20] bg-[#211E16]">
+        <PinterestConnect onSuccess={(res) => {
+          useSearchStore.getState().setResults(res, res.length);
+          useSearchStore.getState().setQuery('Your Pinterest style');
+        }} />
+      </div>
+
 
       {/* Results */}
       {query && (
