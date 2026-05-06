@@ -1,7 +1,7 @@
 // All API calls go through this client
 // This makes it easy to swap the backend URL and handle errors consistently
 
-const BASE = import.meta.env.VITE_API_URL || '/api';
+const BASE = import.meta.env.VITE_API_URL || 'https://btl-backend-production-f682.up.railway.app/api';
 
 async function request(path, options = {}) {
   const token = localStorage.getItem('btl_token');
