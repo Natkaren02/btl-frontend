@@ -24,11 +24,9 @@ export default function Nav() {
   useEffect(() => setMenuOpen(false), [location]);
 
   useEffect(() => {
-    // Check current session
     supabase.auth.getSession().then(({ data }) => {
       setUser(data.session?.user || null);
     });
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
     });
@@ -43,6 +41,7 @@ export default function Nav() {
   const links = [
     { to: '/', label: 'Home' },
     { to: '/search', label: 'Search' },
+    { to: '/style', label: 'My style' },
     { to: '/how-it-works', label: 'How it works' },
     { to: '/about', label: 'About' },
     { to: '/for-brands', label: 'For brands' },
@@ -145,4 +144,3 @@ export default function Nav() {
     </>
   );
 }
-
