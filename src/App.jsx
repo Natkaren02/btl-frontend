@@ -5,6 +5,7 @@ import { Home, HowItWorks, About, ForBrands } from './components/pages/index.jsx
 import Search from './components/pages/Search';
 import Wardrobe from './components/pages/Wardrobe';
 import ProductDetail from './components/pages/ProductDetail';
+import StyleAnalysis from './components/pages/StyleAnalysis';
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/search" element={<Search />} />
+            <Route path="/style" element={<StyleAnalysis />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/about" element={<About />} />
             <Route path="/for-brands" element={<ForBrands />} />
@@ -27,3 +29,4 @@ export default function App() {
     </BrowserRouter>
   );
 }
+
