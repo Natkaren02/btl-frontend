@@ -149,13 +149,20 @@ function PinBreakdown({ analysis, onShopItem }) {
               { label: 'Fit', value: item.fit },
               { label: 'Rise', value: item.rise },
               { label: 'Length', value: item.length },
-              { label: 'Break', value: item.break },
-              { label: 'Heel', value: item.heel },
-              { label: 'Toe shape', value: item.toe },
-              { label: 'Strap', value: item.strap_type },
-              { label: 'Hardware', value: item.hardware },
-              { label: 'Closure', value: item.closure },
-            ].filter(f => f.value && f.value !== 'n/a' && f.value !== 'N/A').map(({ label, value }) => (
+              // break is internal only - never show to user
+              ...(item.category === 'shoes' ? [
+                { label: 'Heel', value: item.heel },
+                { label: 'Toe shape', value: item.toe },
+              ] : []),
+              ...(item.category === 'bags' ? [
+                { label: 'Strap', value: item.strap_type },
+                { label: 'Hardware', value: item.hardware },
+                { label: 'Closure', value: item.closure },
+              ] : []),
+              ...(['outerwear', 'dresses'].includes(item.category) ? [
+                { label: 'Closure', value: item.closure },
+              ] : []),
+            ].filter(f => f.value && f.value !== 'n/a' && f.value !== 'N/A' && f.value !== 'null').map(({ label, value }) => (
               <div key={label}>
                 <p className="text-[10px] uppercase tracking-wider text-[#4A4438]">{label}</p>
                 <p className="text-[#A89880] text-xs capitalize mt-0.5">{value}</p>
