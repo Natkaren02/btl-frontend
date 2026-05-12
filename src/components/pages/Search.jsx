@@ -75,18 +75,22 @@ export default function Search() {
           setPinterestAnalysis(analysis || null);
           if (analysis?.search_terms?.length) {
             setExternalLoading(true);
+            const ebayQuery = analysis.search_terms.slice(0, 3).join(' ');
+            console.log('Pinterest eBay search:', ebayQuery);
             Promise.allSettled([
               fetch(`${API}/etsy/match`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ search_terms: analysis.search_terms }),
               }).then(r => r.json()),
-              fetch(`${API}/ebay/search?q=${encodeURIComponent(analysis.search_terms[0])}`).then(r => r.json()),
+              fetch(`${API}/ebay/search?q=${encodeURIComponent(ebayQuery)}`).then(r => r.json()),
             ]).then(([etsy, ebay]) => {
-              const etsyR = etsy.status === 'fulfilled' ? etsy.value.results || [] : [];
-              const ebayR = ebay.status === 'fulfilled' ? ebay.value.results || [] : [];
+              const etsyR = etsy.status === 'fulfilled' ? (etsy.value?.results || []) : [];
+              const ebayR = ebay.status === 'fulfilled' ? (ebay.value?.results || []) : [];
+              console.log('Pinterest external:', etsyR.length, ebayR.length);
               setExternalResults([...etsyR, ...ebayR]);
-            }).finally(() => setExternalLoading(false));
+            }).catch(err => console.error('Pinterest external error:', err))
+            .finally(() => setExternalLoading(false));
           }
         }} />
       </div>
