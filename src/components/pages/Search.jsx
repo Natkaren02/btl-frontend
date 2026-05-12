@@ -30,14 +30,16 @@ export default function Search() {
     setExternalLoading(true);
     try {
       const [etsyRes, ebayRes] = await Promise.allSettled([
-        fetch(`${API}/etsy/search?q=${encodeURIComponent(q)}&limit=12`).then(r => r.json()),
-        fetch(`${API}/ebay/search?q=${encodeURIComponent(q)}&limit=12`).then(r => r.json()),
+        fetch(`${API}/etsy/search?q=${encodeURIComponent(q)}`).then(r => r.json()),
+        fetch(`${API}/ebay/search?q=${encodeURIComponent(q)}`).then(r => r.json()),
       ]);
 
       const etsy = etsyRes.status === 'fulfilled' ? etsyRes.value.results || [] : [];
       const ebay = ebayRes.status === 'fulfilled' ? ebayRes.value.results || [] : [];
+      console.log(`External results: Etsy=${etsy.length}, eBay=${ebay.length}`);
       setExternalResults([...etsy, ...ebay]);
-    } catch {
+    } catch (err) {
+      console.error('External search error:', err);
       setExternalResults([]);
     } finally {
       setExternalLoading(false);
@@ -79,7 +81,7 @@ export default function Search() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ search_terms: analysis.search_terms }),
               }).then(r => r.json()),
-              fetch(`${API}/ebay/search?q=${encodeURIComponent(analysis.search_terms[0])}&limit=12`).then(r => r.json()),
+              fetch(`${API}/ebay/search?q=${encodeURIComponent(analysis.search_terms[0])}`).then(r => r.json()),
             ]).then(([etsy, ebay]) => {
               const etsyR = etsy.status === 'fulfilled' ? etsy.value.results || [] : [];
               const ebayR = ebay.status === 'fulfilled' ? ebay.value.results || [] : [];
