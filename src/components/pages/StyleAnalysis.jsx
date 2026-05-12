@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
 
@@ -201,6 +201,7 @@ export default function StyleAnalysisPage() {
   const [shopResults, setShopResults] = useState([]);
   const [shopping, setShopping] = useState(false);
   const [loadingPins, setLoadingPins] = useState(false);
+  const shopRef = useRef(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setUser(data.session?.user || null));
@@ -318,12 +319,18 @@ export default function StyleAnalysisPage() {
   const shopItem = async (item) => {
     setShopping(true);
     setShopResults([]);
+    // Scroll to shop results
+    setTimeout(() => shopRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     const query = item.search_query || [item.rise, item.fit, item.colour, item.subcategory].filter(Boolean).join(' ');
+    console.log('Shopping for:', query);
     try {
       const res = await fetch(`${API}/ebay/search?q=${encodeURIComponent(query)}`);
       const data = await res.json();
+      console.log('Shop results:', data.results?.length);
       setShopResults(data.results || []);
-    } catch {}
+    } catch (err) {
+      console.error('Shop error:', err);
+    }
     finally { setShopping(false); }
   };
 
@@ -530,7 +537,7 @@ export default function StyleAnalysisPage() {
             <PinBreakdown analysis={pinResult} onShopItem={shopItem} />
 
             {(shopping || shopResults.length > 0) && (
-              <div className="mt-10">
+              <div className="mt-10" ref={shopRef}>
                 <p className="text-[10px] tracking-wider uppercase text-[#7A7060] mb-5">
                   {shopping ? 'Finding exact matches...' : `${shopResults.length} matches found`}
                 </p>
