@@ -27,7 +27,18 @@ function CategoryCard({ cat }) {
   const maxFit = cat.fits[0]?.count || 1;
 
   return (
-    <div className="border border-[#2E2A20] p-6">
+    <div className="border border-[#2E2A20] overflow-hidden">
+      {/* Pin images for this category */}
+      {cat.images?.length > 0 && (
+        <div className="grid gap-px bg-[#2E2A20]" style={{ gridTemplateColumns: `repeat(${Math.min(cat.images.length, 4)}, 1fr)` }}>
+          {cat.images.slice(0, 4).map((img, i) => (
+            <div key={i} className="aspect-square overflow-hidden bg-[#211E16]">
+              <img src={img} alt="" className="w-full h-full object-cover" loading="lazy" />
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="p-6">
       <div className="flex items-start justify-between mb-5">
         <div>
           <h3 className="font-['Cormorant_Garamond'] italic text-[#F0EBE1] text-xl capitalize mb-0.5">
@@ -121,6 +132,7 @@ function CategoryCard({ cat }) {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
@@ -178,45 +190,63 @@ export default function StyleAnalysisPage() {
     setSelectedBoard(board);
     setStep('analysing');
     setError('');
-
-    // Rotating messages while analysing
-    const messages = [
-      'Reading your pins...',
-      'Analysing silhouettes...',
-      'Identifying colours and materials...',
-      'Finding patterns in your style...',
-      'Building your style profile...',
-    ];
-    let msgIdx = 0;
-    const interval = setInterval(() => {
-      msgIdx = (msgIdx + 1) % messages.length;
-      setAnalysingText(messages[msgIdx]);
-    }, 4000);
+    setAnalysingText('Starting analysis...');
 
     try {
+      // Start the job
       const res = await fetch(`${API}/pinterest/match`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ session_key: sessionKey, board_id: board.id }),
       });
-      clearInterval(interval);
-      const data = await res.json();
-      setAnalysis(data.analysis);
-      setProducts(data.results || []);
-      setPinsAnalysed(data.pins_found || 0);
-      setStep('results');
+      const { job_id, pins_found } = await res.json();
+      setPinsAnalysed(pins_found || 0);
 
-      // Also search eBay
-      if (data.analysis?.search_terms?.length) {
-        const ebayQuery = data.analysis.search_terms.slice(0, 3).join(' ');
-        fetch(`${API}/ebay/search?q=${encodeURIComponent(ebayQuery)}`)
-          .then(r => r.json())
-          .then(d => { if (d.results?.length) setProducts(prev => [...prev, ...d.results]); })
-          .catch(() => {});
-      }
+      // Poll for completion
+      const poll = setInterval(async () => {
+        try {
+          const jobRes = await fetch(`${API}/pinterest/job/${job_id}`);
+          const job = await jobRes.json();
+
+          setAnalysingText(`${job.message || 'Analysing...'}`);
+
+          if (job.status === 'done') {
+            clearInterval(poll);
+            const { analysis, products } = job.result;
+            setAnalysis(analysis);
+            setProducts(products || []);
+            setPinsAnalysed(analysis.pins_analysed || pins_found);
+            setStep('results');
+
+            // Also search eBay with style terms
+            if (analysis.search_terms?.length) {
+              const ebayQuery = analysis.search_terms.slice(0, 3).join(' ');
+              fetch(`${API}/ebay/search?q=${encodeURIComponent(ebayQuery)}`)
+                .then(r => r.json())
+                .then(d => { if (d.results?.length) setProducts(prev => [...prev, ...d.results]); })
+                .catch(() => {});
+            }
+          } else if (job.status === 'failed') {
+            clearInterval(poll);
+            setError(job.error || 'Analysis failed. Please try again.');
+            setStep('boards');
+          }
+        } catch {
+          // Keep polling on network errors
+        }
+      }, 3000);
+
+      // Safety timeout after 5 minutes
+      setTimeout(() => {
+        clearInterval(poll);
+        if (step === 'analysing') {
+          setError('Analysis timed out. Please try again with a smaller board.');
+          setStep('boards');
+        }
+      }, 300000);
+
     } catch (err) {
-      clearInterval(interval);
-      setError('Analysis failed. Please try again.');
+      setError('Failed to start analysis. Please try again.');
       setStep('boards');
     }
   };
