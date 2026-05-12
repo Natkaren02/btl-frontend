@@ -10,146 +10,197 @@ const supabase = createClient(
 const API = import.meta.env.VITE_API_URL || 'https://btl-backend-production-f682.up.railway.app/api';
 const SESSION_KEY = 'btl_pinterest_session';
 
-function Bar({ count, max }) {
-  const pct = max > 0 ? Math.round((count / max) * 100) : 0;
+// ── COMPONENTS ────────────────────────────────────────────────────
+
+function ProgressBar({ progress, message }) {
   return (
-    <div className="flex items-center gap-3">
-      <div className="flex-1 h-px bg-[#2E2A20] relative">
-        <div className="absolute left-0 top-0 h-px bg-[#C9A96E] transition-all" style={{ width: `${pct}%` }} />
+    <div className="text-center py-24">
+      <div className="inline-block w-8 h-8 border border-[#C9A96E] border-t-transparent rounded-full animate-spin mb-8" />
+      <p className="font-['Cormorant_Garamond'] italic text-[#F0EBE1] text-2xl mb-3">{message}</p>
+      <div className="max-w-xs mx-auto h-px bg-[#2E2A20] relative mt-6">
+        <div
+          className="absolute left-0 top-0 h-px bg-[#C9A96E] transition-all duration-1000"
+          style={{ width: `${progress}%` }}
+        />
       </div>
-      <span className="text-[#C9A96E] text-xs w-6 text-right">{count}×</span>
+      <p className="text-[#4A4438] text-xs mt-2">{progress}%</p>
     </div>
   );
 }
 
-function CategoryCard({ cat }) {
-  const maxColour = cat.colours[0]?.count || 1;
-  const maxFit = cat.fits[0]?.count || 1;
+function FormulaGroup({ group, onShop }) {
+  const [showItems, setShowItems] = useState(false);
 
   return (
     <div className="border border-[#2E2A20] overflow-hidden">
-      {/* Pin images for this category */}
-      {cat.images?.length > 0 && (
-        <div className="grid gap-px bg-[#2E2A20]" style={{ gridTemplateColumns: `repeat(${Math.min(cat.images.length, 4)}, 1fr)` }}>
-          {cat.images.slice(0, 4).map((img, i) => (
+      {/* Pin images showing this formula */}
+      {group.pins?.filter(Boolean).length > 0 && (
+        <div
+          className="grid gap-px bg-[#2E2A20]"
+          style={{ gridTemplateColumns: `repeat(${Math.min(group.pins.filter(Boolean).length, 4)}, 1fr)` }}
+        >
+          {group.pins.filter(Boolean).slice(0, 4).map((img, i) => (
             <div key={i} className="aspect-square overflow-hidden bg-[#211E16]">
               <img src={img} alt="" className="w-full h-full object-cover" loading="lazy" />
             </div>
           ))}
         </div>
       )}
-      <div className="p-6">
-      <div className="flex items-start justify-between mb-5">
-        <div>
-          <h3 className="font-['Cormorant_Garamond'] italic text-[#F0EBE1] text-xl capitalize mb-0.5">
-            {cat.name}
-          </h3>
-          <p className="text-[10px] uppercase tracking-wider text-[#7A7060]">{cat.count} pins</p>
+
+      {/* Generated formula illustration */}
+      {group.generated_image && (
+        <div className="border-t border-[#2E2A20]">
+          <img src={group.generated_image} alt="Outfit formula" className="w-full object-cover max-h-64" />
         </div>
-        <span className="font-['Cormorant_Garamond'] italic text-[#C9A96E] text-4xl">{cat.count}×</span>
-      </div>
+      )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {cat.colours.length > 0 && (
-          <div>
-            <p className="text-[10px] tracking-[0.12em] uppercase text-[#7A7060] mb-3">Colour</p>
-            <div className="space-y-2">
-              {cat.colours.slice(0, 6).map(({ value, count }) => (
-                <div key={value}>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-[#A89880] text-xs capitalize">{value}</span>
-                  </div>
-                  <Bar count={count} max={maxColour} />
-                </div>
-              ))}
-            </div>
+      <div className="p-6">
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex-1">
+            <p className="text-[10px] uppercase tracking-wider text-[#7A7060] mb-1">Outfit formula — saved {group.count}×</p>
+            <h3 className="font-['Cormorant_Garamond'] italic text-[#F0EBE1] text-xl leading-snug">
+              {group.formula}
+            </h3>
           </div>
+          <span className="font-['Cormorant_Garamond'] italic text-[#C9A96E] text-4xl ml-4 flex-shrink-0">
+            {group.count}×
+          </span>
+        </div>
+
+        {group.proportions && (
+          <p className="text-[#7A7060] text-sm mb-3 leading-relaxed border-l border-[#2E2A20] pl-3">
+            {group.proportions}
+          </p>
         )}
 
-        {cat.fits.length > 0 && (
-          <div>
-            <p className="text-[10px] tracking-[0.12em] uppercase text-[#7A7060] mb-3">Silhouette / Fit</p>
-            <div className="space-y-2">
-              {cat.fits.slice(0, 6).map(({ value, count }) => (
-                <div key={value}>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-[#A89880] text-xs capitalize">{value}</span>
-                  </div>
-                  <Bar count={count} max={maxFit} />
-                </div>
-              ))}
-            </div>
-          </div>
+        {group.balance && (
+          <p className="text-[#8AAA68] text-xs mb-4 leading-relaxed">
+            ✦ {group.balance}
+          </p>
         )}
 
-        {cat.rises?.filter(r => r.value).length > 0 && (
-          <div>
-            <p className="text-[10px] tracking-[0.12em] uppercase text-[#7A7060] mb-3">Rise</p>
-            <div className="space-y-2">
-              {cat.rises.filter(r => r.value).slice(0, 4).map(({ value, count }) => (
-                <div key={value}>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-[#A89880] text-xs capitalize">{value}</span>
-                  </div>
-                  <Bar count={count} max={cat.rises[0]?.count || 1} />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        <div className="flex gap-3 mt-4">
+          <button
+            onClick={() => setShowItems(!showItems)}
+            className="text-xs border border-[#2E2A20] text-[#7A7060] px-4 py-2 hover:border-[#7A7060] transition-colors"
+          >
+            {showItems ? 'Hide breakdown' : 'See item breakdown'}
+          </button>
+          <button
+            onClick={() => onShop(group)}
+            className="text-xs bg-[#C9A96E] text-[#18160F] px-4 py-2 hover:bg-[#F0EBE1] transition-colors uppercase tracking-wider"
+          >
+            Shop this formula
+          </button>
+        </div>
 
-        {cat.materials?.filter(m => m.value).length > 0 && (
-          <div>
-            <p className="text-[10px] tracking-[0.12em] uppercase text-[#7A7060] mb-3">Material</p>
-            <div className="space-y-2">
-              {cat.materials.filter(m => m.value).slice(0, 4).map(({ value, count }) => (
-                <div key={value}>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-[#A89880] text-xs capitalize">{value}</span>
-                  </div>
-                  <Bar count={count} max={cat.materials[0]?.count || 1} />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Specific combinations */}
-      {cat.items?.length > 1 && (
-        <div className="mt-4 pt-4 border-t border-[#2E2A20]">
-          <p className="text-[10px] tracking-[0.12em] uppercase text-[#7A7060] mb-2">Specific combinations pinned</p>
-          <div className="flex flex-wrap gap-1.5">
-            {cat.items.map((item, i) => {
-              const parts = [item.rise, item.fit, item.colour, item.material, item.details].filter(Boolean);
-              if (!parts.length) return null;
+        {showItems && group.items?.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-[#2E2A20] space-y-2">
+            {group.items.map((item, i) => {
+              const parts = [item.rise, item.fit, item.length, item.colour, item.material, item.details].filter(Boolean);
               return (
-                <span key={i} className="text-[10px] text-[#7A7060] border border-[#2E2A20] px-2 py-1 capitalize">
-                  {parts.join(' · ')}
-                </span>
+                <div key={i} className="flex items-start gap-3">
+                  <span className="text-[#C9A96E] text-[10px] uppercase tracking-wider w-20 flex-shrink-0 pt-0.5">
+                    {item.category}
+                  </span>
+                  <p className="text-[#A89880] text-xs leading-relaxed capitalize">
+                    {item.subcategory} — {parts.join(' · ')}
+                  </p>
+                </div>
               );
             })}
           </div>
-        </div>
-      )}
+        )}
       </div>
     </div>
   );
 }
+
+function PinBreakdown({ analysis, onShopItem }) {
+  if (!analysis?.items?.length) return null;
+
+  return (
+    <div className="space-y-4">
+      <div className="mb-6 p-4 bg-[#211E16] border border-[#2E2A20]">
+        <p className="text-[10px] uppercase tracking-wider text-[#7A7060] mb-2">Outfit formula</p>
+        <p className="font-['Cormorant_Garamond'] italic text-[#F0EBE1] text-lg">
+          {analysis.outfit_formula || analysis.overall_vibe}
+        </p>
+        {analysis.balance_notes && (
+          <p className="text-[#8AAA68] text-xs mt-2">✦ {analysis.balance_notes}</p>
+        )}
+      </div>
+
+      {analysis.items.map((item, i) => (
+        <div key={i} className="border border-[#2E2A20] p-5">
+          <div className="flex items-start justify-between mb-3">
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-[#C9A96E] mb-1">{item.category}</p>
+              <h4 className="font-['Cormorant_Garamond'] italic text-[#F0EBE1] text-lg capitalize">
+                {item.subcategory}
+              </h4>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
+            {[
+              { label: 'Colour', value: item.colour },
+              { label: 'Material', value: item.material },
+              { label: 'Fit', value: item.fit },
+              { label: 'Rise', value: item.rise },
+              { label: 'Length', value: item.length },
+              { label: 'Break', value: item.break },
+              { label: 'Heel', value: item.heel },
+              { label: 'Toe shape', value: item.toe },
+              { label: 'Strap', value: item.strap_type },
+              { label: 'Hardware', value: item.hardware },
+              { label: 'Closure', value: item.closure },
+            ].filter(f => f.value && f.value !== 'n/a' && f.value !== 'N/A').map(({ label, value }) => (
+              <div key={label}>
+                <p className="text-[10px] uppercase tracking-wider text-[#4A4438]">{label}</p>
+                <p className="text-[#A89880] text-xs capitalize mt-0.5">{value}</p>
+              </div>
+            ))}
+          </div>
+
+          {item.details && (
+            <p className="text-[#7A7060] text-xs border-t border-[#2E2A20] pt-2 mt-2">
+              Details: {item.details}
+            </p>
+          )}
+
+          <button
+            onClick={() => onShopItem(item)}
+            className="mt-3 text-xs border border-[#C9A96E] text-[#C9A96E] px-4 py-2 hover:bg-[#C9A96E] hover:text-[#18160F] transition-colors uppercase tracking-wider"
+          >
+            Find this item
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── MAIN PAGE ─────────────────────────────────────────────────────
 
 export default function StyleAnalysisPage() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [sessionKey, setSessionKey] = useState(() => localStorage.getItem(SESSION_KEY) || null);
   const [boards, setBoards] = useState([]);
-  const [step, setStep] = useState('connect');
+  const [pins, setPins] = useState([]);
+  const [step, setStep] = useState('connect'); // connect | boards | board-analysing | board-results | pins | pin-analysing | pin-results
   const [selectedBoard, setSelectedBoard] = useState(null);
-  const [analysis, setAnalysis] = useState(null);
-  const [products, setProducts] = useState([]);
+  const [boardResult, setBoardResult] = useState(null);
+  const [pinResult, setPinResult] = useState(null);
+  const [selectedPin, setSelectedPin] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [pinsAnalysed, setPinsAnalysed] = useState(0);
-  const [analysingText, setAnalysingText] = useState('Reading your pins...');
+  const [jobProgress, setJobProgress] = useState(0);
+  const [jobMessage, setJobMessage] = useState('');
+  const [shopResults, setShopResults] = useState([]);
+  const [shopping, setShopping] = useState(false);
+  const [loadingPins, setLoadingPins] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setUser(data.session?.user || null));
@@ -184,71 +235,96 @@ export default function StyleAnalysisPage() {
     finally { setLoading(false); }
   };
 
-  const handleConnect = () => { window.location.href = `${API}/pinterest/auth`; };
+  const pollJob = (jobId, onDone, onFail) => {
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`${API}/pinterest/job/${jobId}`);
+        const job = await res.json();
+        setJobProgress(job.progress || 0);
+        setJobMessage(job.message || '');
+        if (job.status === 'done') { clearInterval(interval); onDone(job.result); }
+        else if (job.status === 'failed') { clearInterval(interval); onFail(job.error); }
+      } catch {}
+    }, 3000);
+    // Safety timeout 10 minutes
+    setTimeout(() => clearInterval(interval), 600000);
+  };
 
   const handleAnalyseBoard = async (board) => {
     setSelectedBoard(board);
-    setStep('analysing');
+    setStep('board-analysing');
+    setJobProgress(0);
+    setJobMessage('Starting analysis...');
     setError('');
-    setAnalysingText('Starting analysis...');
 
     try {
-      // Start the job
-      const res = await fetch(`${API}/pinterest/match`, {
+      const res = await fetch(`${API}/pinterest/analyse-board`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ session_key: sessionKey, board_id: board.id }),
       });
-      const { job_id, pins_found } = await res.json();
-      setPinsAnalysed(pins_found || 0);
+      const { job_id } = await res.json();
+      pollJob(job_id,
+        (result) => { setBoardResult(result); setStep('board-results'); },
+        (err) => { setError(err || 'Analysis failed'); setStep('boards'); }
+      );
+    } catch { setError('Failed to start analysis'); setStep('boards'); }
+  };
 
-      // Poll for completion
-      const poll = setInterval(async () => {
-        try {
-          const jobRes = await fetch(`${API}/pinterest/job/${job_id}`);
-          const job = await jobRes.json();
+  const handlePickPin = async (board) => {
+    setSelectedBoard(board);
+    setStep('pins');
+    setLoadingPins(true);
+    try {
+      const res = await fetch(`${API}/pinterest/pins/${sessionKey}/${board.id}`);
+      const data = await res.json();
+      setPins(data.pins || []);
+    } catch { setError('Failed to load pins'); }
+    finally { setLoadingPins(false); }
+  };
 
-          setAnalysingText(`${job.message || 'Analysing...'}`);
+  const handleAnalysePin = async (pin) => {
+    setSelectedPin(pin);
+    setStep('pin-analysing');
+    setJobProgress(0);
+    setJobMessage('Examining your pin in detail...');
 
-          if (job.status === 'done') {
-            clearInterval(poll);
-            const { analysis, products } = job.result;
-            setAnalysis(analysis);
-            setProducts(products || []);
-            setPinsAnalysed(analysis.pins_analysed || pins_found);
-            setStep('results');
+    try {
+      const res = await fetch(`${API}/pinterest/analyse-pin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_key: sessionKey, pin_image: pin.image }),
+      });
+      const { job_id } = await res.json();
+      pollJob(job_id,
+        (result) => { setPinResult(result); setStep('pin-results'); },
+        (err) => { setError(err || 'Analysis failed'); setStep('pins'); }
+      );
+    } catch { setError('Failed to analyse pin'); setStep('pins'); }
+  };
 
-            // Also search eBay with style terms
-            if (analysis.search_terms?.length) {
-              const ebayQuery = analysis.search_terms.slice(0, 3).join(' ');
-              fetch(`${API}/ebay/search?q=${encodeURIComponent(ebayQuery)}`)
-                .then(r => r.json())
-                .then(d => { if (d.results?.length) setProducts(prev => [...prev, ...d.results]); })
-                .catch(() => {});
-            }
-          } else if (job.status === 'failed') {
-            clearInterval(poll);
-            setError(job.error || 'Analysis failed. Please try again.');
-            setStep('boards');
-          }
-        } catch {
-          // Keep polling on network errors
-        }
-      }, 3000);
+  const shopFormula = async (group) => {
+    setShopping(true);
+    setShopResults([]);
+    const query = group.formula;
+    try {
+      const res = await fetch(`${API}/ebay/search?q=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      setShopResults(data.results || []);
+    } catch {}
+    finally { setShopping(false); }
+  };
 
-      // Safety timeout after 5 minutes
-      setTimeout(() => {
-        clearInterval(poll);
-        if (step === 'analysing') {
-          setError('Analysis timed out. Please try again with a smaller board.');
-          setStep('boards');
-        }
-      }, 300000);
-
-    } catch (err) {
-      setError('Failed to start analysis. Please try again.');
-      setStep('boards');
-    }
+  const shopItem = async (item) => {
+    setShopping(true);
+    setShopResults([]);
+    const query = item.search_query || [item.rise, item.fit, item.colour, item.subcategory].filter(Boolean).join(' ');
+    try {
+      const res = await fetch(`${API}/ebay/search?q=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      setShopResults(data.results || []);
+    } catch {}
+    finally { setShopping(false); }
   };
 
   if (!user) {
@@ -274,142 +350,225 @@ export default function StyleAnalysisPage() {
 
       <div className="px-12 py-10">
 
+        {/* CONNECT */}
         {step === 'connect' && (
           <div className="max-w-xl">
             <p className="text-[#7A7060] text-sm leading-relaxed mb-8">
-              Connect your Pinterest board and we'll analyse every pin — silhouette, colour, material, rise, fit —
-              and tell you exactly what you keep coming back to. Then we find those exact items from sustainable sources.
+              Connect your Pinterest board. We'll analyse every pin — silhouette, colour, material, rise, fit, proportions —
+              and identify your recurring outfit formulas. Or pick a single pin and we'll break down every item and find exact sustainable matches.
             </p>
             {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
-            {loading ? (
-              <p className="text-[#7A7060] text-sm">Loading...</p>
-            ) : (
-              <button onClick={handleConnect} className="px-8 py-3.5 bg-[#C9A96E] text-[#18160F] text-xs uppercase tracking-wider hover:bg-[#F0EBE1] transition-colors">
+            {loading ? <p className="text-[#7A7060] text-sm">Loading...</p> : (
+              <button onClick={() => window.location.href = `${API}/pinterest/auth`}
+                className="px-8 py-3.5 bg-[#C9A96E] text-[#18160F] text-xs uppercase tracking-wider hover:bg-[#F0EBE1] transition-colors">
                 Connect Pinterest
               </button>
             )}
           </div>
         )}
 
+        {/* BOARDS */}
         {step === 'boards' && (
           <div>
-            <p className="text-[#7A7060] text-sm mb-6">Choose a board. We'll look at up to 20 pins individually — the more pins, the better the analysis.</p>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-px bg-[#2E2A20] border border-[#2E2A20] mb-6">
+            <p className="text-[#7A7060] text-sm mb-2">Choose what to do with your board:</p>
+            <p className="text-[#4A4438] text-xs mb-8">Analyse whole board = find your outfit formulas. Pick a pin = break down one specific outfit.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-[#2E2A20] border border-[#2E2A20] mb-6">
               {boards.map(board => (
-                <button
-                  key={board.id}
-                  onClick={() => handleAnalyseBoard(board)}
-                  className="bg-[#18160F] hover:bg-[#211E16] p-5 text-left transition-colors group"
-                >
-                  <p className="font-['Cormorant_Garamond'] italic text-[#F0EBE1] text-base mb-1 group-hover:text-[#C9A96E] transition-colors">{board.name}</p>
-                  <p className="text-[10px] uppercase tracking-wider text-[#4A4438]">Analyse →</p>
-                </button>
+                <div key={board.id} className="bg-[#18160F] p-5">
+                  <p className="font-['Cormorant_Garamond'] italic text-[#F0EBE1] text-base mb-4">{board.name}</p>
+                  <div className="flex gap-2">
+                    <button onClick={() => handleAnalyseBoard(board)}
+                      className="flex-1 text-[10px] uppercase tracking-wider border border-[#C9A96E] text-[#C9A96E] px-3 py-2 hover:bg-[#C9A96E] hover:text-[#18160F] transition-colors">
+                      Analyse board
+                    </button>
+                    <button onClick={() => handlePickPin(board)}
+                      className="flex-1 text-[10px] uppercase tracking-wider border border-[#2E2A20] text-[#7A7060] px-3 py-2 hover:border-[#7A7060] transition-colors">
+                      Pick a pin
+                    </button>
+                  </div>
+                </div>
               ))}
             </div>
-            <button onClick={() => { localStorage.removeItem(SESSION_KEY); setSessionKey(null); setStep('connect'); }} className="text-[#4A4438] text-xs hover:text-[#7A7060] transition-colors">
+            <button onClick={() => { localStorage.removeItem(SESSION_KEY); setSessionKey(null); setStep('connect'); }}
+              className="text-[#4A4438] text-xs hover:text-[#7A7060] transition-colors">
               Disconnect Pinterest
             </button>
           </div>
         )}
 
-        {step === 'analysing' && (
-          <div className="text-center py-24">
-            <div className="inline-block w-8 h-8 border border-[#C9A96E] border-t-transparent rounded-full animate-spin mb-6" />
-            <p className="font-['Cormorant_Garamond'] italic text-[#F0EBE1] text-2xl mb-3">{analysingText}</p>
-            <p className="text-[#7A7060] text-sm">Analysing up to 20 pins individually. Takes about 30–60 seconds.</p>
-          </div>
+        {/* BOARD ANALYSING */}
+        {step === 'board-analysing' && (
+          <ProgressBar progress={jobProgress} message={jobMessage || 'Analysing your board...'} />
         )}
 
-        {step === 'results' && analysis && (
+        {/* BOARD RESULTS */}
+        {step === 'board-results' && boardResult && (
           <div>
-            {/* Summary header */}
-            <div className="mb-10 p-6 bg-[#211E16] border border-[#2E2A20]">
-              <p className="text-[10px] tracking-[0.18em] uppercase text-[#7A7060] mb-2">
-                {pinsAnalysed} pins analysed · {analysis.items?.length || 0} items identified
+            <div className="mb-8 p-6 bg-[#211E16] border border-[#2E2A20]">
+              <p className="text-[10px] tracking-wider uppercase text-[#7A7060] mb-2">
+                {boardResult.pins_analysed} pins analysed
               </p>
-              <p className="font-['Cormorant_Garamond'] italic text-[#F0EBE1] text-3xl font-light mb-4">
-                {analysis.summary}
-              </p>
+              <p className="font-['Cormorant_Garamond'] italic text-[#F0EBE1] text-3xl mb-3">{boardResult.summary}</p>
               <div className="flex flex-wrap gap-2">
-                {analysis.dominant_colours?.map((c, i) => (
+                {boardResult.dominant_colours?.map((c, i) => (
                   <span key={i} className="text-[10px] text-[#C9A96E] border border-[#C9A96E]/30 px-2 py-1 capitalize">{c}</span>
                 ))}
-                {analysis.dominant_materials?.map((m, i) => (
+                {boardResult.dominant_materials?.map((m, i) => (
                   <span key={i} className="text-[10px] text-[#8AAA68] border border-[#8AAA68]/30 px-2 py-1 capitalize">{m}</span>
                 ))}
               </div>
             </div>
 
-            {/* Detailed breakdown per category */}
-            {analysis.category_breakdown?.length > 0 && (
-              <div className="mb-12">
-                <p className="text-[10px] tracking-[0.18em] uppercase text-[#7A7060] mb-6">What you pin, in detail</p>
-                <div className="space-y-4">
-                  {analysis.category_breakdown.slice(0, 8).map((cat, i) => (
-                    <CategoryCard key={i} cat={cat} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Search terms */}
-            {analysis.search_terms?.length > 0 && (
+            {boardResult.formula_groups?.length > 0 && (
               <div className="mb-10">
-                <p className="text-[10px] tracking-[0.18em] uppercase text-[#7A7060] mb-3">Searching for</p>
-                <div className="flex flex-wrap gap-2">
-                  {analysis.search_terms.map((term, i) => (
-                    <span key={i} className="text-[11px] text-[#7A7060] border border-[#2E2A20] px-3 py-1.5">{term}</span>
+                <p className="text-[10px] tracking-wider uppercase text-[#7A7060] mb-6">Your outfit formulas</p>
+                <div className="space-y-6">
+                  {boardResult.formula_groups.map((group, i) => (
+                    <FormulaGroup key={i} group={group} onShop={shopFormula} />
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Products */}
-            {products.length > 0 && (
-              <div>
-                <p className="text-[10px] tracking-[0.18em] uppercase text-[#7A7060] mb-5">{products.length} matches found</p>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-px bg-[#2E2A20] border border-[#2E2A20]">
-                  {products.filter(p => p.images?.[0]).map((product) => {
-                    const priceDKK = product.price_dkk || (product.price ? Math.round(product.price / 100) : null);
-                    const isExternal = ['ebay', 'etsy'].includes(product.source);
-                    return (
-                      <div
-                        key={product.id}
-                        onClick={() => isExternal ? window.open(product.source_url, '_blank') : null}
-                        className="bg-[#18160F] hover:bg-[#211E16] transition-colors cursor-pointer group"
-                      >
-                        <div className="aspect-[3/4] bg-[#211E16] overflow-hidden relative">
-                          <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover" loading="lazy" />
-                          {isExternal && (
-                            <div className="absolute inset-0 bg-[#18160F]/0 group-hover:bg-[#18160F]/20 transition-colors flex items-center justify-center">
-                              <span className="opacity-0 group-hover:opacity-100 text-[10px] uppercase tracking-wider text-[#F0EBE1] border border-[#F0EBE1] px-3 py-1.5 transition-opacity">View →</span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="p-3.5">
-                          <p className="font-['Cormorant_Garamond'] italic text-[#F0EBE1] text-sm leading-snug mb-1 line-clamp-2">{product.title}</p>
-                          <div className="flex items-center justify-between">
+            {/* Shop results */}
+            {(shopping || shopResults.length > 0) && (
+              <div className="mt-10">
+                <p className="text-[10px] tracking-wider uppercase text-[#7A7060] mb-5">
+                  {shopping ? 'Finding matches...' : `${shopResults.length} matches found`}
+                </p>
+                {shopResults.length > 0 && (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-px bg-[#2E2A20] border border-[#2E2A20]">
+                    {shopResults.filter(p => p.images?.[0]).map((product) => {
+                      const priceDKK = product.price_dkk || (product.price ? Math.round(product.price / 100) : null);
+                      return (
+                        <div key={product.id} onClick={() => window.open(product.source_url, '_blank')}
+                          className="bg-[#18160F] hover:bg-[#211E16] transition-colors cursor-pointer">
+                          <div className="aspect-[3/4] overflow-hidden bg-[#211E16]">
+                            <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover" loading="lazy" />
+                          </div>
+                          <div className="p-3.5">
+                            <p className="font-['Cormorant_Garamond'] italic text-[#F0EBE1] text-sm line-clamp-2 mb-1">{product.title}</p>
                             <span className="text-[#C9A96E] text-xs">{priceDKK ? `${priceDKK.toLocaleString('da-DK')} kr` : '—'}</span>
-                            <span className="text-[8px] text-[#4A4438] uppercase tracking-wider">{product.source}</span>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
             <div className="mt-10 flex gap-4">
-              <button onClick={() => setStep('boards')} className="px-6 py-3 border border-[#2E2A20] text-[#7A7060] text-xs uppercase tracking-wider hover:border-[#7A7060] transition-colors">
+              <button onClick={() => setStep('boards')}
+                className="px-6 py-3 border border-[#2E2A20] text-[#7A7060] text-xs uppercase tracking-wider hover:border-[#7A7060] transition-colors">
                 Try another board
-              </button>
-              <button onClick={() => navigate('/search')} className="px-6 py-3 bg-[#C9A96E] text-[#18160F] text-xs uppercase tracking-wider hover:bg-[#F0EBE1] transition-colors">
-                Go to search
               </button>
             </div>
           </div>
         )}
+
+        {/* PIN GRID */}
+        {step === 'pins' && (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <p className="text-[#7A7060] text-sm">Click a pin to break down every item in the outfit and find exact sustainable matches.</p>
+              <button onClick={() => setStep('boards')} className="text-[#4A4438] text-xs hover:text-[#7A7060]">← Back</button>
+            </div>
+            {loadingPins ? (
+              <p className="text-[#7A7060] text-sm">Loading pins...</p>
+            ) : (
+              <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-px bg-[#2E2A20] border border-[#2E2A20]">
+                {pins.filter(p => p.image).map(pin => (
+                  <button key={pin.id} onClick={() => handleAnalysePin(pin)}
+                    className="aspect-square overflow-hidden bg-[#211E16] hover:opacity-80 transition-opacity relative group">
+                    <img src={pin.image} alt={pin.title || ''} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-[#18160F]/0 group-hover:bg-[#18160F]/40 transition-colors flex items-center justify-center">
+                      <span className="opacity-0 group-hover:opacity-100 text-[10px] uppercase tracking-wider text-[#F0EBE1] transition-opacity">Analyse</span>
+                    </div>
+                  </button>
+                ))}
+                {pins.filter(p => p.image).length === 0 && (
+                  <p className="text-[#7A7060] text-sm col-span-6 p-4">No pins with images found in this board.</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* PIN ANALYSING */}
+        {step === 'pin-analysing' && (
+          <div>
+            {selectedPin?.image && (
+              <div className="flex justify-center mb-8">
+                <img src={selectedPin.image} alt="" className="max-h-64 object-contain border border-[#2E2A20]" />
+              </div>
+            )}
+            <ProgressBar progress={jobProgress || 50} message={jobMessage || 'Analysing every item in this outfit...'} />
+          </div>
+        )}
+
+        {/* PIN RESULTS */}
+        {step === 'pin-results' && pinResult && (
+          <div>
+            <div className="flex gap-6 mb-8">
+              {selectedPin?.image && (
+                <div className="w-48 flex-shrink-0">
+                  <img src={selectedPin.image} alt="" className="w-full object-cover border border-[#2E2A20]" />
+                </div>
+              )}
+              <div className="flex-1">
+                <p className="text-[10px] uppercase tracking-wider text-[#7A7060] mb-2">Pin breakdown</p>
+                <p className="font-['Cormorant_Garamond'] italic text-[#F0EBE1] text-2xl mb-2">
+                  {pinResult.overall_vibe}
+                </p>
+                {pinResult.outfit_formula && (
+                  <p className="text-[#A89880] text-sm">{pinResult.outfit_formula}</p>
+                )}
+              </div>
+            </div>
+
+            <PinBreakdown analysis={pinResult} onShopItem={shopItem} />
+
+            {(shopping || shopResults.length > 0) && (
+              <div className="mt-10">
+                <p className="text-[10px] tracking-wider uppercase text-[#7A7060] mb-5">
+                  {shopping ? 'Finding exact matches...' : `${shopResults.length} matches found`}
+                </p>
+                {shopResults.length > 0 && (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-px bg-[#2E2A20] border border-[#2E2A20]">
+                    {shopResults.filter(p => p.images?.[0]).map((product) => {
+                      const priceDKK = product.price_dkk || (product.price ? Math.round(product.price / 100) : null);
+                      return (
+                        <div key={product.id} onClick={() => window.open(product.source_url, '_blank')}
+                          className="bg-[#18160F] hover:bg-[#211E16] transition-colors cursor-pointer">
+                          <div className="aspect-[3/4] overflow-hidden bg-[#211E16]">
+                            <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover" loading="lazy" />
+                          </div>
+                          <div className="p-3.5">
+                            <p className="font-['Cormorant_Garamond'] italic text-[#F0EBE1] text-sm line-clamp-2 mb-1">{product.title}</p>
+                            <span className="text-[#C9A96E] text-xs">{priceDKK ? `${priceDKK.toLocaleString('da-DK')} kr` : '—'}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="mt-10 flex gap-4">
+              <button onClick={() => { setStep('pins'); setShopResults([]); }}
+                className="px-6 py-3 border border-[#2E2A20] text-[#7A7060] text-xs uppercase tracking-wider hover:border-[#7A7060] transition-colors">
+                Pick another pin
+              </button>
+              <button onClick={() => setStep('boards')}
+                className="px-6 py-3 border border-[#2E2A20] text-[#7A7060] text-xs uppercase tracking-wider hover:border-[#7A7060] transition-colors">
+                Back to boards
+              </button>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
