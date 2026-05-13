@@ -175,6 +175,11 @@ function PinBreakdown({ analysis, onShopItem }) {
               Details: {item.details}
             </p>
           )}
+          {item.obscured_by && (
+            <p className="text-[#4A4438] text-xs italic mt-1">
+              Note: {item.obscured_by}
+            </p>
+          )}
 
           <button
             onClick={() => onShopItem(item)}
@@ -326,9 +331,10 @@ export default function StyleAnalysisPage() {
   const shopItem = async (item) => {
     setShopping(true);
     setShopResults([]);
-    // Scroll to shop results
     setTimeout(() => shopRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-    const query = item.search_query || [item.rise, item.fit, item.colour, item.subcategory].filter(Boolean).join(' ');
+    // Build precise search query from item attributes
+    const parts = [item.rise, item.fit, item.colour, item.material, item.subcategory].filter(Boolean);
+    const query = item.search_query || parts.join(' ');
     console.log('Shopping for:', query);
     try {
       const res = await fetch(`${API}/ebay/search?q=${encodeURIComponent(query)}`);
