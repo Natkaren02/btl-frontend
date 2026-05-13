@@ -175,9 +175,9 @@ function PinBreakdown({ analysis, onShopItem }) {
               Details: {item.details}
             </p>
           )}
-          {item.obscured_by && (
+          {item.obscured_by && item.obscured_by.split(' ').length > 2 && (
             <p className="text-[#4A4438] text-xs italic mt-1">
-              Note: {item.obscured_by}
+              {item.obscured_by}
             </p>
           )}
 
@@ -593,3 +593,4 @@ export default function StyleAnalysisPage() {
     </div>
   );
 }
+
